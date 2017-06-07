@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Islam on plain-blog Demo</title>
+    <link>/tags/islam/</link>
+    <description>Recent content in Islam on plain-blog Demo</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&amp;copy; 2017 Joe Bloggs</copyright>
+    <lastBuildDate>Tue, 19 Apr 2016 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/islam/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Exploring Islamic Finance</title>
+      <link>/post/exploring-islamic-finance/</link>
+      <pubDate>Tue, 19 Apr 2016 00:00:00 +0000</pubDate>
+      
+      <guid>/post/exploring-islamic-finance/</guid>
+      <description>Sharia law prohibits the imposition of interest on monetary loans. Charging interest is usually considered to be riba, or “usury”. The opposition to interest comes from an understanding of money only as a means of exchange and not as a commodity in itself. As Pakistani Islamic scholar Muhammad Taqi Usmani explains, “Since money has no intrinsic value…the exchange of a unit of money for another unit of the same denomination cannot be effected except as par value.</description>
+    </item>
+    
+  </channel>
+</rss>

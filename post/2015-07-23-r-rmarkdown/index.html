@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+    <title>Hello R Markdown</title>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    
+      <meta name="author" content="Joe Bloggs">
+    
+    <meta name="generator" content="Hugo 0.21" />
+    
+    
+    
+      <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/grids-responsive-min.css">
+    
+    
+    <link rel="stylesheet" href="/css/plain-blog.css">
+</head>
+<body>
+<div class="pure-g">
+  <div class="pure-u-1" id="header">
+    <a href="/">plain-blog Demo</a>
+    
+    
+      <a href="/tags/">Tags</a>
+    
+      <a href="/categories/">Categories</a>
+    
+      <a href="/about/">About</a>
+    
+      <a href="/contact/">Contact</a>
+    
+  </div>
+</div>
+<div class="pure-g">
+  <div class="pure-u-1-24 pure-u-lg-1-12 pure-u-xl-1-5"></div>
+  <div class="pure-u-11-12 pure-u-lg-5-6 pure-u-xl-3-5" id="main">
+  	<main>
+  	  <header>
+  	    <h1>Hello R Markdown</h1>
+        <time datetime="2015-07-23T21:13:14-05:00" class="post-list timeago">2015-07-23</time>
+        
+
+  
+    <a class="tag" href="/tags/r-markdown">Tag: R Markdown</a>
+  
+    <a class="tag" href="/tags/plot">Tag: plot</a>
+  
+    <a class="tag" href="/tags/regression">Tag: regression</a>
+  
+
+
+
+  
+    <a class="tag" href="/categories/r">Category: R</a>
+  
+
+
+
+
+
+  	  </header>
+
+  	  
+
+
+      
+
+  	  
+        <div id="r-markdown" class="section level1">
+<h1>R Markdown</h1>
+<p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
+<p>You can embed an R code chunk like this:</p>
+<pre class="r"><code>summary(cars)
+##      speed           dist       
+##  Min.   : 4.0   Min.   :  2.00  
+##  1st Qu.:12.0   1st Qu.: 26.00  
+##  Median :15.0   Median : 36.00  
+##  Mean   :15.4   Mean   : 42.98  
+##  3rd Qu.:19.0   3rd Qu.: 56.00  
+##  Max.   :25.0   Max.   :120.00
+fit &lt;- lm(dist ~ speed, data = cars)
+fit
+## 
+## Call:
+## lm(formula = dist ~ speed, data = cars)
+## 
+## Coefficients:
+## (Intercept)        speed  
+##     -17.579        3.932</code></pre>
+</div>
+<div id="including-plots" class="section level1">
+<h1>Including Plots</h1>
+<p>You can also embed plots. See Figure <a href="#fig:pie">1</a> for example:</p>
+<pre class="r"><code>par(mar = c(0, 1, 0, 1))
+pie(
+  c(280, 60, 20),
+  c(&#39;Sky&#39;, &#39;Sunny side of pyramid&#39;, &#39;Shady side of pyramid&#39;),
+  col = c(&#39;#0292D8&#39;, &#39;#F7EA39&#39;, &#39;#C4B632&#39;),
+  init.angle = -50, border = NA
+)</code></pre>
+<div class="figure"><span id="fig:pie"></span>
+<img src="/post/2015-07-23-r-rmarkdown_files/figure-html/pie-1.png" alt="A fancy pie chart." width="672" />
+<p class="caption">
+Figure 1: A fancy pie chart.
+</p>
+</div>
+</div>
+
+      
+
+    </main>
+  </div>
+  <div class="pure-u-1-24 pure-u-lg-1-12 pure-u-xl-1-5"></div>
+</div>
+<div class="pure-g" id="foot">
+  <div class="pure-u-1">
+    
+      <a href="/contact/">Comments</a>
+    
+      <a href="/github.com/exampleuser/">GitHub</a>
+    
+      <a href="/twitter.com/exampleuser">Twitter</a>
+    
+      <a href="/www.facebook.com/exampleuser">Facebook</a>
+    
+      <a href="https://github.com/LiaungYip/plain-blog/">plain-blog theme for Hugo</a>
+    
+    
+      
+
+
+    
+      <p>&copy; 2017 Joe Bloggs</p>
+    
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/2.0.4/timeago.min.js" integrity="sha256-34otvl+f6DWlliQUlAwT5hvizEJc8lPlNpW9T23pfGA=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+  new timeago().render(document.querySelectorAll('.timeago'));
+</script>
+
+</body>
+</html>
