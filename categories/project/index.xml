@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Project on Guillermo C. Jordan</title>
+    <link>/categories/project/</link>
+    <description>Recent content in Project on Guillermo C. Jordan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>&amp;copy; 2017 Joe Bloggs</copyright>
+    <lastBuildDate>Sun, 11 Jun 2017 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/categories/project/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Analyzing /r/rupaulsdragrace</title>
+      <link>/post/analyzing-r-rupaulsdragrace/</link>
+      <pubDate>Sun, 11 Jun 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/post/analyzing-r-rupaulsdragrace/</guid>
+      <description>Updated: 06/11/17
+ Rupaul’s Drag Race is one of my favorite shows and one of the few spaces of LGBT representation present in today’s television. The website Reddit hosts many online communities dedicated to a myriad of topics, and the subreddit /r/rupaulsdragrace is one of the most vibrant forums dedicated to the show. As such, it is a perfect source of data to analyze popular reaction and production of information surrouding the show.</description>
+    </item>
+    
+  </channel>
+</rss>

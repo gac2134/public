@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+    <title>Analyzing /r/rupaulsdragrace</title>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/pure-min.css" integrity="sha384-UQiGfs9ICog+LwheBSRCt1o5cbyKIHbwjWscjemyBMT9YCUMZffs6UqUTd0hObXD" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    
+      <meta name="author" content="Joe Bloggs">
+    
+    <meta name="generator" content="Hugo 0.21" />
+    
+    
+    
+      <link rel="stylesheet" href="https://unpkg.com/purecss@0.6.2/build/grids-responsive-min.css">
+    
+    
+    <link rel="stylesheet" href="/css/plain-blog.css">
+</head>
+<body>
+<div class="pure-g">
+  <div class="pure-u-1" id="header">
+    <a href="/">Guillermo C. Jordan</a>
+    
+    
+      <a href="/about/">About</a>
+    
+      <a href="/categories/">Categories</a>
+    
+      <a href="/tags/">Tags</a>
+    
+      <a href="/contact/">Contact</a>
+    
+  </div>
+</div>
+<div class="pure-g">
+  <div class="pure-u-1-24 pure-u-lg-1-12 pure-u-xl-1-5"></div>
+  <div class="pure-u-11-12 pure-u-lg-5-6 pure-u-xl-3-5" id="main">
+  	<main>
+  	  <header>
+  	    <h1>Analyzing /r/rupaulsdragrace</h1>
+        <time datetime="2017-06-11T00:00:00Z" class="post-list timeago">2017-06-11</time>
+        
+
+  
+    <a class="tag" href="/tags/r">Tag: r</a>
+  
+    <a class="tag" href="/tags/python">Tag: python</a>
+  
+    <a class="tag" href="/tags/text-mining">Tag: text mining</a>
+  
+
+
+
+  
+    <a class="tag" href="/categories/project">Category: Project</a>
+  
+
+
+
+
+
+  	  </header>
+
+  	  
+
+
+      
+
+  	  
+        <p>Updated: 06/11/17</p>
+<div class="figure">
+<img src="/img/rupaul.png" />
+
+</div>
+<p>Rupaul’s Drag Race is one of my favorite shows and one of the few spaces of LGBT representation present in today’s television. The website Reddit hosts many online communities dedicated to a myriad of topics, and the subreddit /r/rupaulsdragrace is one of the most vibrant forums dedicated to the show. As such, it is a perfect source of data to analyze popular reaction and production of information surrouding the show. The large number of queens, vocabulary and lingo especifically related to the show create a great case for text mining analysis. Most of the techniques used in this project to analyze the subreddit comes from the freely available book <a href="http://tidytextmining.com">Text Mining with R</a>, by Julia Silge and David Robinson.</p>
+<div id="scrapping-the-subreddit" class="section level3">
+<h3>1. Scrapping the Subreddit</h3>
+<p>The easiest way to download information from a subreddit is to access it trough Reddit’s API using python. <code>praw</code> is a python <a href="https://praw.readthedocs.io/en/latest/">package</a> that gives convenient access to subreddit, submission and comment information. Before using the API, it is necessary to get a <code>client_id</code> and <code>client_secret</code> code from Reddit by registering your API access as a script application. More information about registering and general set up can be found in the package website. I scrapped the title, the time of submission, the number of comments and the text body of the post if there was any.</p>
+<pre class="python"><code>import praw
+import pandas as pd
+import numpy as np
+
+reddit = praw.Reddit(&#39;bot1&#39;, user_agent=&#39;bot1 user agent&#39;)
+subreddit=reddit.subreddit(&quot;rupaulsdragrace&quot;)
+titles,time,text,comments=[],[],[],[]
+
+for submission in subreddit.submissions(None,1496275200):
+    title.append(submission.title)
+    time.append(submission.created)
+    comments.append(submission.num_comments)
+    text.append(submission.selftext)
+
+rpdr_df=pd.Dataframe({&#39;title&#39;:title,&#39;time&#39;:time,&#39;text&#39;:text,&#39;num_comments&#39;:comments})
+rpdr_df.to_csv(&quot;rpdr.csv&quot;)
+</code></pre>
+<p>The arguments inside <code>subreddit.submissions</code> are the time boundaries for the submissions examined. I scrapped information before Jun 1<sup>st</sup>, 2017, which translates to <code>1496275200</code> in POSIX time. There’s a plethora of other information to be downloaded from the API, like upvote ratios and viewing numbers. I was tempted to download comment text information as well, but after a few test runs I determined it would take a lot of memory and processing power to analyzing this humongous dataset.</p>
+</div>
+<div id="cleaning-and-unnesting" class="section level3">
+<h3>2. Cleaning and Unnesting</h3>
+<p>After scrapping, I was able to get approx. 92 000 submissions, encompassing all of the subreddit’s history. For the next parts, I relied in the powers of <code>unnest_tokens</code> function, part of the <code>tidytext</code> package. It smoothly breaks a text in its components units and also removes unnecessary punctuation at the edges of the unit. Before continuing, I also did some basic clean up to remove unwanted characters, like http links and possessive apostrophes.</p>
+<pre class="r"><code>rpdr$text &lt;- rpdr$text %&gt;% str_replace(&quot;(f|ht)tp(s?)://(.*)[.][a-z]+&quot;,&quot;&quot;) %&gt;% str_replace(&quot;&#39;s{1,}&quot;,&quot;&quot;)
+rpdr$titles &lt;- rpdr$titles %&gt;% str_replace(&quot;(f|ht)tp(s?)://(.*)[.][a-z]+&quot;,&quot;&quot;) %&gt;% str_replace(&quot;&#39;s{1,}&quot;,&quot;&quot;)</code></pre>
+<p>The lingo of Drag Race includes many pairs of words that should be considered as a single unit, like “drag race” and “lip sync” for example. Similarly, a few of the Queens names are also a word pair. To account for this, I replace the pairs into a single unit linked by an underscore using a <code>joinwords</code> function.</p>
+<pre class="r"><code>joinwords &lt;-function(string){
+  string &lt;- string %&gt;% str_replace(&quot;drag race&quot;,&quot;drag_race&quot;) %&gt;% 
+            str_replace(&quot;phi phi&quot;,&quot;phi_phi&quot;) %&gt;% 
+            str_replace(&quot;chi chi&quot;,&quot;chi_chi&quot;) %&gt;% 
+            str_replace(&quot;lip sync&quot;,&quot;lip_sync&quot;) %&gt;% 
+            str_replace(&quot;miss fame&quot;,&quot;miss_fame&quot;)
+}</code></pre>
+<p>After applying the function to the text and title columns, we are ready to “unnest” them into words. It is important to make sure the columns are characters data types and not factorized. I also add a column that keeps track whether the word comes initially from the title or the body text and remove “stop words”, like “of”, “the” and “at”.</p>
+<pre class="r"><code>library(tidytext)
+
+tidy_title &lt;- rpdr %&gt;% select(id,time,titles) %&gt;% 
+  mutate(titles=as.character(titles)) %&gt;% 
+  mutate(type=&quot;Title&quot;) %&gt;% 
+  unnest_tokens(word,titles)
+
+tidy_text &lt;- rpdr %&gt;% select(id,time,text) %&gt;% 
+  mutate(type=&quot;Text&quot;) %&gt;% 
+  mutate(text=as.character(text)) %&gt;%
+  unnest_tokens(word,text)
+
+data(stop_words)
+tidy_rpdr &lt;- rbind(tidy_title,tidy_text) %&gt;% anti_join(stop_words)</code></pre>
+</div>
+<div id="most-mentioned-queen" class="section level3">
+<h3>3. Most Mentioned Queen</h3>
+<p>With the words unnested, it is easy to generate a table that summarizes the most frequently used words. To no surprise, words like “season” and “episode” are the most used in a community created to discuss a TV show. Single digits also appear, likely indicating reference to a season or episode number.</p>
+<pre class="r"><code>count_table &lt;- tidy_rpdr %&gt;% group_by(word) %&gt;% count() %&gt;% arrange(desc(n))
+
+count_table</code></pre>
+<pre><code>## # A tibble: 74,326 × 2
+##       word     n
+##      &lt;chr&gt; &lt;int&gt;
+## 1   season 25860
+## 2   queens 18391
+## 3     drag 17984
+## 4  episode 11775
+## 5    queen 11709
+## 6        3  8782
+## 7        2  8710
+## 8     race  7482
+## 9     time  7144
+## 10  alaska  6537
+## # ... with 74,316 more rows</code></pre>
+<p>We might want to ask specifically about mentions of queens’ names, as a measure of popularity for example. I downloaded a list of queens’ names from Wikipedia using the <code>htmltab</code> package. I also applied the previous <code>joinwords</code> function and minimized the names to match the format of the count table.</p>
+<pre class="r"><code>library(htmltab)
+
+queens &lt;-htmltab(doc=&quot;https://en.wikipedia.org/wiki/List_of_RuPaul%27s_Drag_Race_contestants&quot;)
+
+queens &lt;- queens %&gt;% mutate(name=`Drag Name`) %&gt;% select(name,Season)
+
+queens$name &lt;- queens$name %&gt;% tolower() %&gt;% 
+              sapply(joinwords) %&gt;% word(1)</code></pre>
+<p>The count table containing queen’s names is finalized by doing a right sided merge between <code>count_table</code> and <code>queens</code>. Alaska, the winner of the recent All Stars Season 2 and Season 5 runner up, is the most mentioned queen in the history of the subreddit. Using ggplot2, I can generate a graph to better visualize the information.</p>
+<pre class="r"><code>queens_count&lt;-right_join(count_table,queens,by=&quot;word&quot;) %&gt;%              
+             arrange(desc(n))
+queens_count</code></pre>
+<pre><code>## # A tibble: 115 × 3
+##      word     n Season
+##     &lt;chr&gt; &lt;int&gt;  &lt;chr&gt;
+## 1  alaska  6537      5
+## 2   katya  6463      7
+## 3   adore  4614      6
+## 4  bianca  4360      6
+## 5  violet  4099      7
+## 6   pearl  3917      7
+## 7  alyssa  3901      5
+## 8  trixie  3701      7
+## 9  willam  3686      4
+## 10 sharon  3115      4
+## # ... with 105 more rows</code></pre>
+<p><img src="/post/2017-06-11-analyzing-r-rupaulsdragrace_files/figure-html/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+
+      
+
+    </main>
+  </div>
+  <div class="pure-u-1-24 pure-u-lg-1-12 pure-u-xl-1-5"></div>
+</div>
+<div class="pure-g" id="foot">
+  <div class="pure-u-1">
+    
+      <a href="mailto:g.carranza@columbia.edu">Email</a>
+    
+      <a href="https://www.dropbox.com/s/rssj1wltfphac16/resume_public_gcjordan.pdf?dl=0">Resume</a>
+    
+      <a href="https://linkedin.com/in/gcarranzaj/">LinkedIn</a>
+    
+    
+      
+
+
+    
+      <p>&copy; 2017 Joe Bloggs</p>
+    
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/2.0.4/timeago.min.js" integrity="sha256-34otvl+f6DWlliQUlAwT5hvizEJc8lPlNpW9T23pfGA=" crossorigin="anonymous"></script>
+<script type="text/javascript">
+  new timeago().render(document.querySelectorAll('.timeago'));
+</script>
+
+</body>
+</html>

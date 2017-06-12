@@ -1,0 +1,144 @@
+---
+title: "Analyzing /r/rupaulsdragrace"
+author: "Guillermo C. Jordan"
+date: '2017-11-09'
+output:
+  html_document: default
+slug: analyzing-r-rupaulsdragrace
+tags:
+- r
+- python
+- text mining
+categories: article
+---
+Updated: 06/11/17
+
+Rupaul's Drag Race is one of my favorite shows and one of the few spaces of LGBT representation present in today's television. The website Reddit hosts many online communities dedicated to a myriad of topics, and the subreddit /r/rupaulsdragrace is one of the most vibrant forums dedicated to the show. As such, it is a perfect source of data to analyze popular reaction and production of information surrouding the show. The large number of queens, vocabulary and lingo especifically related to the show create a great case for text mining analysis. Most of the techniques used in this project to analyze the subreddit comes from the freely available book [Text Mining with R](http://tidytextmining.com), by Julia Silge and David Robinson. 
+
+### 1. Scrapping the Subreddit
+
+The easiest way to download information from a subreddit is to access it trough Reddit's API using python. `praw` is a python [package](https://praw.readthedocs.io/en/latest/) that gives convenient access to subreddit, submission and comment information. Before using the API, it is necessary to get a `client_id` and `client_secret` code from Reddit by registering your API access as a script application. More information about registering and general set up can be found in the package website. I scrapped the title, the time of submission, the number of comments and the text body of the post if there was any. 
+
+```{python, eval=FALSE, include=TRUE}
+import praw
+import pandas as pd
+import numpy as np
+
+reddit = praw.Reddit('bot1', user_agent='bot1 user agent')
+subreddit=reddit.subreddit("rupaulsdragrace")
+titles,time,text,comments=[],[],[],[]
+
+for submission in subreddit.submissions(None,1496275200):
+    title.append(submission.title)
+    time.append(submission.created)
+    comments.append(submission.num_comments)
+    text.append(submission.selftext)
+
+rpdr_df=pd.Dataframe({'title':title,'time':time,'text':text,'num_comments':comments})
+rpdr_df.to_csv("rpdr.csv")
+
+```
+
+The arguments inside `subreddit.submissions` are the time boundaries for the submissions examined. I scrapped information before Jun 1^st^, 2017, which translates to `1496275200` in POSIX time. There's a plethora of other information to be downloaded from the API, like upvote ratios and viewing numbers. I was tempted to download comment text information as well, but after a few test runs I determined it would take a lot of memory and processing power to analyzing this humongous dataset.
+
+### 2. Cleaning and Unnesting
+
+After scrapping, I was able to get approx. 92 000 submissions, encompassing all of the subreddit's history. For the next parts, I relied in the powers of `unnest_tokens` function, part of the `tidytext` package. It smoothly breaks a text in its components units and also removes unnecessary punctuation at the edges of the unit. Before continuing, I also did some basic clean up to remove unwanted characters, like http links and possessive apostrophes. 
+
+
+```{r, eval=TRUE, include=FALSE}
+library(tidyverse)
+library(stringr)
+
+source <- read.csv("rpdr.csv")
+rpdr <- source %>% mutate(id=row_number())
+```
+```{r, eval=TRUE, include=TRUE}
+rpdr$text <- rpdr$text %>% str_replace("(f|ht)tp(s?)://(.*)[.][a-z]+","") %>% str_replace("'s{1,}","")
+rpdr$titles <- rpdr$titles %>% str_replace("(f|ht)tp(s?)://(.*)[.][a-z]+","") %>% str_replace("'s{1,}","")
+```
+
+
+The lingo of Drag Race includes many pairs of words that should be considered as a single unit, like "drag race" and "lip sync" for example. Similarly, a few of the Queens names are also a word pair. To account for this, I replace the pairs into a single unit linked by an underscore using a `joinwords` function. 
+
+
+```{r}
+joinwords <-function(string){
+  string <- string %>% str_replace("drag race","drag_race") %>% 
+            str_replace("phi phi","phi_phi") %>% 
+            str_replace("chi chi","chi_chi") %>% 
+            str_replace("lip sync","lip_sync") %>% 
+            str_replace("miss fame","miss_fame")
+}
+```
+```{r, include=FALSE}
+rpdr$titles <- sapply(rpdr$titles,joinwords)
+rpdr$text <- sapply(rpdr$text,joinwords)
+```
+
+
+After applying the function to the text and title columns, we are ready to "unnest" them into words. It is important to make sure the columns are characters data types and not factorized. I also add a column that keeps track whether the word comes initially from the title or the body text and remove "stop words", like "of", "the" and "at". 
+
+
+```{r,warning=FALSE, message=FALSE}
+library(tidytext)
+
+tidy_title <- rpdr %>% select(id,time,titles) %>% 
+  mutate(titles=as.character(titles)) %>% 
+  mutate(type="Title") %>% 
+  unnest_tokens(word,titles)
+
+tidy_text <- rpdr %>% select(id,time,text) %>% 
+  mutate(type="Text") %>% 
+  mutate(text=as.character(text)) %>%
+  unnest_tokens(word,text)
+
+data(stop_words)
+tidy_rpdr <- rbind(tidy_title,tidy_text) %>% anti_join(stop_words)
+```
+
+### 3. Most Mentioned Queen
+
+With the words unnested, it is easy to generate a table that summarizes the most frequently used words. To no surprise, words like "season" and "episode" are the most used in a community created to discuss a TV show. Single digits also appear, likely indicating reference to a season or episode number.  
+
+```{r}
+count_table <- tidy_rpdr %>% group_by(word) %>% count() %>% arrange(desc(n))
+
+count_table
+```
+We might want to ask specifically about mentions of queens' names, as a measure of popularity for example. I downloaded a list of queens' names from Wikipedia using the `htmltab` package. I also applied the previous `joinwords` function and minimized the names to match the format of the count table. 
+
+```{r, warning=FALSE, message=FALSE}
+library(htmltab)
+
+queens <-htmltab(doc="https://en.wikipedia.org/wiki/List_of_RuPaul%27s_Drag_Race_contestants")
+
+queens <- queens %>% mutate(name=`Drag Name`) %>% select(name,Season)
+
+queens$name <- queens$name %>% tolower() %>% 
+              sapply(joinwords) %>% word(1)
+
+```
+```{r, include=FALSE}
+queens <- queens %>%  filter(str_length(Season)<2) %>% 
+          mutate(word=name) %>% select(word,Season)
+```
+
+The count table containing queen's names is finalized by doing a right sided merge between `count_table` and `queens`. Alaska, the winner of the recent All Stars Season 2 and Season 5 runner up, is the most mentioned queen in the history of the subreddit. Using ggplot2, I can generate a graph to better visualize the information. 
+
+```{r}
+queens_count<-right_join(count_table,queens,by="word") %>%              
+             arrange(desc(n))
+queens_count
+```
+
+```{r, fig.align="center"}
+library(ggplot2)
+top_queens <- queens_count %>% filter(row_number()<26) %>% mutate(word = reorder(word, n))
+ggplot(top_queens,aes(word,n,fill=Season)) +
+  geom_col() +coord_flip() +
+  labs(title="Top 25 Queens by mentions in /r/rpdr",x="",y="Mentions")
+```
+
+
+
